@@ -146,11 +146,14 @@ def train(args):
 
 
 def plot_curves(args, training_losses, val_losses):
-    plt.plot(range(len(training_losses)), training_losses)
-    plt.plot(range(len(val_losses)), val_losses)
-    plt.ylabel("MSE Loss")
-    plt.xlabel("Epoch")
-    plt.savefig(f"{args.save_model_path}/loss.svg", format="svg")
+    plt.title('MSE Loss Curve')
+    plt.ylabel('MSE Loss')
+    plt.xlabel('Epochs')
+    plt.plot(training_losses, label="Train")
+    plt.plot(val_losses, label="Valid")
+    plt.legend()
+    plt.savefig(f"{args.save_model_path}/mse_loss.png", format="png")
+    plt.clf()
 
 
 def main(args):

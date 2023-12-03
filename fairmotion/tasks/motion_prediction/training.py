@@ -8,6 +8,7 @@ import os
 import random
 import torch
 import torch.nn as nn
+import numpy as np
 
 from fairmotion.tasks.motion_prediction import generate, utils, test
 from fairmotion.utils import utils as fairmotion_utils
@@ -155,9 +156,13 @@ def plot_curves(args, training_losses, val_losses):
     plt.savefig(f"{args.save_model_path}/mse_loss.png", format="png")
     plt.clf()
 
+def save_to_csv(args, training_losses, val_losses):
+    np.savetxt(f"{args.save_model_path}/mse_loss_dump.csv", np.column_stack((training_losses, val_losses)), header="Train,Validation", fmt='%d',
+               delimiter=',', comments='')
 
 def main(args):
     train_losses, val_losses = train(args)
+    save_to_csv(args, train_losses, val_losses)
     plot_curves(args, train_losses, val_losses)
 
 

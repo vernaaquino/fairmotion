@@ -155,7 +155,7 @@ def train(args):
     return training_losses, val_losses, mae_val_losses_dict
 
 
-def plot_curves(args, training_losses, val_losses):
+def plot_curves(args, training_losses, val_losses, mae_val_losses_dict):
     plt.title('MSE Loss Curve')
     plt.ylabel('MSE Loss')
     plt.xlabel('Epochs')
@@ -164,6 +164,18 @@ def plot_curves(args, training_losses, val_losses):
     plt.legend()
     plt.savefig(f"{args.save_model_path}/mse_loss.png", format="png")
     plt.clf()
+
+    plt.title('MAE Validation Loss Curve')
+    plt.ylabel('MAE Loss')
+    plt.xlabel('Epochs')
+
+    for key, value in mae_val_losses_dict.items():
+        plt.plot(value, label=f"{key} frames")
+
+    plt.legend()
+    plt.savefig(f"{args.save_model_path}/mae_validation_loss.png", format="png")
+    plt.clf()
+
 
 def save_to_csv(args, training_losses, val_losses, mae_val_losses_dict):
     np.savetxt(f"{args.save_model_path}/mse_loss_dump.csv", np.column_stack((training_losses, val_losses)), header="Train,Validation", fmt='%f',
@@ -180,7 +192,7 @@ def save_to_csv(args, training_losses, val_losses, mae_val_losses_dict):
 def main(args):
     train_losses, val_losses, mae_val_losses_dict = train(args)
     save_to_csv(args, train_losses, val_losses, mae_val_losses_dict)
-    plot_curves(args, train_losses, val_losses)
+    plot_curves(args, train_losses, val_losses, mae_val_losses_dict)
 
 
 if __name__ == "__main__":

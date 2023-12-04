@@ -70,21 +70,22 @@ def train(args):
     mae_val_losses_dict = dict()
 
     epoch_loss = 0
-    for iterations, (src_seqs, tgt_seqs) in enumerate(dataset["train"]):
-        model.eval()
-        src_seqs, tgt_seqs = src_seqs.to(device), tgt_seqs.to(device)
-        outputs = model(src_seqs, tgt_seqs, teacher_forcing_ratio=1,)
-        loss = criterion(outputs, tgt_seqs)
-        epoch_loss += loss.item()
-    epoch_loss = epoch_loss / num_training_sequences
-    val_loss = generate.eval(
-        model, criterion, dataset["validation"], args.batch_size, device,
-    )
-    logging.info(
-        "Before training: "
-        f"Training loss {epoch_loss} | "
-        f"Validation loss {val_loss}"
-    )
+    with torch.no_grad():
+        for iterations, (src_seqs, tgt_seqs) in enumerate(dataset["train"]):
+            model.eval()
+            src_seqs, tgt_seqs = src_seqs.to(device), tgt_seqs.to(device)
+            outputs = model(src_seqs, tgt_seqs, teacher_forcing_ratio=1,)
+            loss = criterion(outputs, tgt_seqs)
+            epoch_loss += loss.item()
+        epoch_loss = epoch_loss / num_training_sequences
+        val_loss = generate.eval(
+            model, criterion, dataset["validation"], args.batch_size, device,
+        )
+        logging.info(
+            "Before training: "
+            f"Training loss {epoch_loss} | "
+            f"Validation loss {val_loss}"
+        )
 
     logging.info("Training model...")
     torch.autograd.set_detect_anomaly(True)
@@ -134,23 +135,23 @@ def train(args):
                     model.state_dict(), f"{args.save_model_path}/best.model"
                 )
 
-        # calculate mae validation loss every epoch
-        _, rep = os.path.split(args.preprocessed_path.strip("/"))
-        _, mae = test.test_model(
-            model=model,
-            dataset=dataset["validation"],
-            rep=rep,
-            device=device,
-            mean=mean,
-            std=std,
-            max_len=tgt_len,
-        )
-        logging.info(f"Validation MAE: {mae}")
-        for key, value in mae.items():
-            if key in mae_val_losses_dict:
-                mae_val_losses_dict[key].append(value)
-            else:
-                mae_val_losses_dict[key] = [value]
+        # # calculate mae validation loss every epoch
+        # _, rep = os.path.split(args.preprocessed_path.strip("/"))
+        # _, mae = test.test_model(
+        #     model=model,
+        #     dataset=dataset["validation"],
+        #     rep=rep,
+        #     device=device,
+        #     mean=mean,
+        #     std=std,
+        #     max_len=tgt_len,
+        # )
+        # logging.info(f"Validation MAE: {mae}")
+        # for key, value in mae.items():
+        #     if key in mae_val_losses_dict:
+        #         mae_val_losses_dict[key].append(value)
+        #     else:
+        #         mae_val_losses_dict[key] = [value]
 
     return training_losses, val_losses, mae_val_losses_dict
 
@@ -165,29 +166,29 @@ def plot_curves(args, training_losses, val_losses, mae_val_losses_dict):
     plt.savefig(f"{args.save_model_path}/mse_loss.png", format="png")
     plt.clf()
 
-    plt.title('MAE Validation Loss Curve')
-    plt.ylabel('MAE Loss')
-    plt.xlabel('Epochs')
-
-    for key, value in mae_val_losses_dict.items():
-        plt.plot(value, label=f"{key} frames")
-
-    plt.legend()
-    plt.savefig(f"{args.save_model_path}/mae_validation_loss.png", format="png")
-    plt.clf()
+    # plt.title('MAE Validation Loss Curve')
+    # plt.ylabel('MAE Loss')
+    # plt.xlabel('Epochs')
+    #
+    # for key, value in mae_val_losses_dict.items():
+    #     plt.plot(value, label=f"{key} frames")
+    #
+    # plt.legend()
+    # plt.savefig(f"{args.save_model_path}/mae_validation_loss.png", format="png")
+    # plt.clf()
 
 
 def save_to_csv(args, training_losses, val_losses, mae_val_losses_dict):
     np.savetxt(f"{args.save_model_path}/mse_loss_dump.csv", np.column_stack((training_losses, val_losses)), header="Train,Validation", fmt='%f',
                delimiter=',', comments='')
 
-    frame6 = mae_val_losses_dict[6]
-    frame12 = mae_val_losses_dict[12]
-    frame18 = mae_val_losses_dict[18]
-    frame24 = mae_val_losses_dict[24]
-
-    np.savetxt(f"{args.save_model_path}/mae_val_loss_dump.csv", np.column_stack((frame6, frame12, frame18, frame24)), header="6 Frames, 12 Frames, 18 Frames, 24 Frames", fmt='%f',
-               delimiter=',', comments='')
+    # frame6 = mae_val_losses_dict[6]
+    # frame12 = mae_val_losses_dict[12]
+    # frame18 = mae_val_losses_dict[18]
+    # frame24 = mae_val_losses_dict[24]
+    #
+    # np.savetxt(f"{args.save_model_path}/mae_val_loss_dump.csv", np.column_stack((frame6, frame12, frame18, frame24)), header="6 Frames, 12 Frames, 18 Frames, 24 Frames", fmt='%f',
+    #            delimiter=',', comments='')
 
 def main(args):
     train_losses, val_losses, mae_val_losses_dict = train(args)

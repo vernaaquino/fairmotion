@@ -7,6 +7,7 @@ from torch.nn import LayerNorm
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.nn import TransformerDecoder, TransformerDecoderLayer
 from torch.nn.init import xavier_uniform_
+import torch.nn.functional as F
 
 from fairmotion.models import decoders
 
@@ -109,6 +110,10 @@ class TransformerModel(nn.Module):
             norm=LayerNorm(ninp),
         )
 
+        # todo dont hardcode k and feature size
+        # todo if changing k here, make sure to change k in forward as well
+        k = 3
+        self.temporal_convolution = nn.Conv1d(in_channels=72, out_channels=72, kernel_size=k, padding=0)
         # Use Linear instead of Embedding for continuous valued input
         self.encoder = nn.Linear(ntoken, ninp)
         self.project = nn.Linear(ninp, ntoken)
@@ -132,8 +137,24 @@ class TransformerModel(nn.Module):
                 xavier_uniform_(p)
 
     def forward(self, src, tgt, max_len=None, teacher_forcing_ratio=None):
+        # we get (n, len, dim) (64, 120, 72) as src
+
+        # pad calculated amount of zeros to beginning of src. padding depends on kernel size.
+        # padding should change dimensions to (64, 120 + 2P, 72)
+        k = 3 # todo if changing k here, make sure to change k in the TransformerModel constructor as well
+        p = (k - 1) // 2
+        src = F.pad(input=src, pad=(0, 0, 2 * p, 0), mode='constant', value=0)
+
+        # (n, len, dim) => (n, dim, len)
+        src = src.permute((0, 2, 1))
+
+        # pass this padded src to cnn with padding 0. output should still be n x dim x len
+        src = self.temporal_convolution(src)  # (n, dim, len) (64, 72, 120)
+
         # Transformer expects src and tgt in format (len, batch_size, dim)
-        src = src.transpose(0, 1)
+        src = src.permute((2, 0, 1)) # (len, n, dim) (120, 64, 72)
+
+        #src = src.transpose(0, 1)
         tgt = tgt.transpose(0, 1)
 
         # src and tgt are now (T, B, E)

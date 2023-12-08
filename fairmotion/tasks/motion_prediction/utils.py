@@ -14,6 +14,9 @@ from fairmotion.models import (
     rnn,
     seq2seq,
     transformer,
+    tcn_decoders,
+    tcn_encoders,
+    tcn_seq2seq
 )
 from fairmotion.tasks.motion_prediction import dataset as motion_dataset
 from fairmotion.utils import constants
@@ -138,6 +141,18 @@ def prepare_model(
         model = transformer.TransformerModel(
             input_dim, hidden_dim, 4, hidden_dim, num_layers,
         )
+    # Added for tcn_model
+    elif architecture == "tcn_seq2seq":
+        enc = tcn_encoders.TCNEncoder(
+            input_dim=input_dim, hidden_dim=hidden_dim
+        ).to(device)
+        dec = tcn_decoders.TCNDecoder(
+            input_dim=input_dim,
+            hidden_dim=hidden_dim,
+            output_dim=input_dim,
+            device=device,
+        ).to(device)
+        model = tcn_seq2seq.TCNSeq2Seq(enc, dec)
     model = model.to(device)
     model.zero_grad()
     model.double()
@@ -150,7 +165,7 @@ def log_config(path, args):
             f.write(f"{key}:{value}\n")
 
 
-def prepare_optimizer(model, opt="sgd", lr=None):
+def prepare_optimizer(model, opt="sgd", lr=None):      #lr edit
     kwargs = {}
     if lr is not None:
         kwargs["lr"] = lr

@@ -8,7 +8,9 @@ from fairmotion.utils import constants
 
 
 class Dataset(data.Dataset):
-    def __init__(self, dataset_path, device, mean=None, std=None):
+    def __init__(self, dataset_path, device, mean=None, std=None,
+                 as_int=False # added for input compression
+                ):
         self.src_seqs, self.tgt_seqs = pickle.load(open(dataset_path, "rb"))
         if mean is None or std is None:
             self.mean = np.mean(self.src_seqs, axis=(0, 1))
@@ -16,6 +18,7 @@ class Dataset(data.Dataset):
         else:
             self.mean = mean
             self.std = std
+        self.as_int = as_int # added for input compression
         self.num_total_seqs = len(self.src_seqs)
         self.device = device
 
@@ -27,8 +30,17 @@ class Dataset(data.Dataset):
         tgt_seq = (self.tgt_seqs[index] - self.mean) / (
             self.std + constants.EPSILON
         )
-        src_seq = torch.Tensor(src_seq).to(device=self.device).double()
-        tgt_seq = torch.Tensor(tgt_seq).to(device=self.device).double()
+        #############
+        # MARK:
+        # Code modifications for input compression
+        if self.as_int:
+            src_seq = torch.Tensor(src_seq).type(torch.int64).to(device=self.device)
+            tgt_seq = torch.Tensor(tgt_seq).type(torch.int64).to(device=self.device)
+        else:
+            src_seq = torch.Tensor(src_seq).to(device=self.device).double()
+            tgt_seq = torch.Tensor(tgt_seq).to(device=self.device).double()
+        # End of code modifications for input compression
+        #############
         return src_seq, tgt_seq
 
     def __len__(self):

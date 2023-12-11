@@ -121,6 +121,7 @@ def test_model(model, dataset, rep, device, mean, std, max_len=None):
 def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logging.info("Preparing dataset")
+    _, rep = os.path.split(args.preprocessed_path.strip("/")) # Added for input compression
     dataset, mean, std = utils.prepare_dataset(
         *[
             os.path.join(args.preprocessed_path, f"{split}.pkl")
@@ -129,6 +130,7 @@ def main(args):
         batch_size=args.batch_size,
         device=device,
         shuffle=args.shuffle,
+        as_int=rep=="compressed" # Added for input compression
     )
     # number of predictions per time step = num_joints * angle representation
     data_shape = next(iter(dataset["train"]))[0].shape

@@ -77,7 +77,7 @@ def process_split(
     Returns:
         Some meta statistics (how many sequences processed etc.).
     """
-    assert rep in ["aa", "rotmat", "quat"]
+    assert rep in ["aa", "rotmat", "quat", "compressed"] # `Compressed` value added
     convert_fn = utils.convert_fn_from_R(rep)
 
     data = fairmotion_utils.run_parallel(
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         "--rep",
         type=str,
         help="Angle representation to convert data to",
-        choices=["aa", "quat", "rotmat"],
+        choices=["aa", "quat", "rotmat", "compressed"], # `compressed` added for input compression
         default="aa",
     )
     parser.add_argument(

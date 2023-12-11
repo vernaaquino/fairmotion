@@ -26,7 +26,60 @@ Rotation matrix matrix is column-wise
 TODO:
 Euler Angle order correction for Test
 """
+###################
+# MARK: 
+# coded added for input compression
+"""
+custom "compressed" representation
+"""
+def R2C(R):
+    return batch_auto_reshape(
+        R, lambda x: compress_matrices(x), (3, 3), (1, ),
+    )
 
+def C2R(R):
+    return batch_auto_reshape(
+        R, lambda x: decompress_matrices(x), (3, 3), (1, ),
+    )
+
+def compress_matrices(matrices):
+    """
+    Compresses an array of 3x3 matrices into a single 64-bit integer for each matrix.
+    Parameters:
+    matrices (np.array): Input array of shape (n, 3, 3) containing 3x3 matrices.
+    Returns:
+    np.array: Array of 64-bit integers representing the compressed matrices.
+    """
+    # Normalize the values from -1 to 1 to a range of 0 to 127
+    normalized_matrices = np.interp(matrices, [-1, 1], [0, 127]).astype(np.uint8)
+    # Reshape to have each matrix as a single row of 9 elements
+    reshaped_matrices = normalized_matrices.reshape(-1, 9)
+    # Convert each element to a 7-bit binary string
+    binary_strings = np.vectorize(lambda x: format(x, '07b'))(reshaped_matrices)
+    # Concatenate binary strings for each matrix and convert to 64-bit integer
+    compressed_matrices = np.array([int(''.join(row), 2) for row in binary_strings])
+    return compressed_matrices
+
+def decompress_matrices(compressed_matrices):
+    """
+    Decompresses an array of 64-bit integers back into an array of 3x3 matrices.
+    Parameters:
+    compressed_matrices (np.array): Input array of 64-bit integers representing the compressed matrices.
+    Returns:
+    np.array: Array of 3x3 matrices of floats ranging from -1 to 1.
+    """
+    # Convert each 64-bit integer to a binary string of length 63 (9 elements of 7 bits each)
+    binary_strings = np.vectorize(lambda x: format(x, '063b'))(compressed_matrices)
+    # Split each binary string into 9 chunks of 7 bits and convert back to integers
+    split_binary = np.array([np.array([int(binary_strings[i][j:j+7], 2) for j in range(0, 63, 7)]) for i in range(len(binary_strings))])
+    # Reshape back to 3x3 matrices
+    reshaped_matrices = split_binary.reshape(-1, 3, 3)
+    # Normalize back to the range of -1 to 1
+    decompressed_matrices = np.interp(reshaped_matrices, [0, 127], [-1, 1])
+    return decompressed_matrices
+
+# End of code added for input compression
+##############
 
 def batch_auto_reshape(x, fn, shape_in, shape_out):
     reshape = x.ndim - len(shape_in) > 1

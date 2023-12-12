@@ -16,7 +16,7 @@ from fairmotion.models import (
     transformer,
     cnn_decoders,
     cnn_encoders,
-    cnn_seq2seq
+    cnn_seq2seq,
     tcn_decoders,
     tcn_encoders,
     tcn_seq2seq     #cnn, tcn added for CNN Seq2Seq and TCN architecture (EJ edited)

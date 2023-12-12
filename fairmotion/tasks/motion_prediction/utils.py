@@ -14,9 +14,12 @@ from fairmotion.models import (
     rnn,
     seq2seq,
     transformer,
+    cnn_decoders,
+    cnn_encoders,
+    cnn_seq2seq
     tcn_decoders,
     tcn_encoders,
-    tcn_seq2seq
+    tcn_seq2seq     #cnn, tcn added for CNN Seq2Seq and TCN architecture (EJ edited)
 )
 from fairmotion.tasks.motion_prediction import dataset as motion_dataset
 from fairmotion.utils import constants
@@ -141,6 +144,18 @@ def prepare_model(
         model = transformer.TransformerModel(
             input_dim, hidden_dim, 4, hidden_dim, num_layers,
         )
+    # Added for CNN seq2seq
+    elif architecture == "cnn_seq2seq":
+        enc = cnn_encoders.LSTMEncoder(
+            input_dim=input_dim, hidden_dim=hidden_dim
+        ).to(device)
+        dec = cnn_decoders.LSTMDecoder(
+            input_dim=input_dim,
+            hidden_dim=hidden_dim,
+            output_dim=input_dim,
+            device=device,
+        ).to(device)
+        model = cnn_seq2seq.Seq2Seq(enc, dec)
     # Added for tcn_model
     elif architecture == "tcn_seq2seq":
         enc = tcn_encoders.TCNEncoder(

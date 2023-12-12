@@ -252,7 +252,8 @@ if __name__ == "__main__":
             "transformer",
             "transformer_encoder",
             "rnn",
-            "tcn_seq2seq" # Added for tcn_model
+            "cnn_seq2seq",  # Added for CNN Seq2Seq model (EJ edited)
+            "tcn_seq2seq"   # Added for tcn_model (EJ edited)
         ],
     )
     parser.add_argument(

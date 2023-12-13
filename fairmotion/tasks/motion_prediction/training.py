@@ -129,6 +129,17 @@ def train(args):
             f"Iterations {iterations + 1}"
         )
         if epoch % args.save_model_frequency == 0:
+            _, rep = os.path.split(args.preprocessed_path.strip("/"))
+            _, mae = test.test_model(
+                model=model,
+                dataset=dataset["validation"],
+                rep=rep,
+                device=device,
+                mean=mean,
+                std=std,
+                max_len=tgt_len,
+            )
+            logging.info(f"Validation MAE: {mae}")
             torch.save(
                 model.state_dict(), f"{args.save_model_path}/{epoch}.model"
             )
@@ -136,24 +147,6 @@ def train(args):
                 torch.save(
                     model.state_dict(), f"{args.save_model_path}/best.model"
                 )
-
-        # # calculate mae validation loss every epoch
-        # _, rep = os.path.split(args.preprocessed_path.strip("/"))
-        # _, mae = test.test_model(
-        #     model=model,
-        #     dataset=dataset["validation"],
-        #     rep=rep,
-        #     device=device,
-        #     mean=mean,
-        #     std=std,
-        #     max_len=tgt_len,
-        # )
-        # logging.info(f"Validation MAE: {mae}")
-        # for key, value in mae.items():
-        #     if key in mae_val_losses_dict:
-        #         mae_val_losses_dict[key].append(value)
-        #     else:
-        #         mae_val_losses_dict[key] = [value]
 
     return training_losses, val_losses, mae_val_losses_dict
 
@@ -261,6 +254,8 @@ if __name__ == "__main__":
             "transformer",
             "transformer_encoder",
             "rnn",
+            "cnn_seq2seq",  # Added for CNN Seq2Seq model (EJ edited)
+            "tcn_seq2seq",   # Added for tcn_model (EJ edited)
             "transformer2", # Added for learned input compression
         ],
     )

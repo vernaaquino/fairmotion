@@ -14,6 +14,12 @@ from fairmotion.models import (
     rnn,
     seq2seq,
     transformer,
+    cnn_decoders,
+    cnn_encoders,
+    cnn_seq2seq,
+    tcn_decoders,
+    tcn_encoders,
+    tcn_seq2seq,  #cnn, tcn added for CNN Seq2Seq and TCN architecture (EJ edited)
     transformer2, # Added for learned input compression
 )
 from fairmotion.tasks.motion_prediction import dataset as motion_dataset
@@ -159,6 +165,30 @@ def prepare_model(
         model = transformer.TransformerModel(
             input_dim, hidden_dim, 4, hidden_dim, num_layers,
         )
+    # Added for CNN seq2seq
+    elif architecture == "cnn_seq2seq":
+        enc = cnn_encoders.LSTMEncoder(
+            input_dim=input_dim, hidden_dim=hidden_dim
+        ).to(device)
+        dec = cnn_decoders.LSTMDecoder(
+            input_dim=input_dim,
+            hidden_dim=hidden_dim,
+            output_dim=input_dim,
+            device=device,
+        ).to(device)
+        model = cnn_seq2seq.Seq2Seq(enc, dec)
+    # Added for tcn_model
+    elif architecture == "tcn_seq2seq":
+        enc = tcn_encoders.TCNEncoder(
+            input_dim=input_dim, hidden_dim=hidden_dim
+        ).to(device)
+        dec = tcn_decoders.TCNDecoder(
+            input_dim=input_dim,
+            hidden_dim=hidden_dim,
+            output_dim=input_dim,
+            device=device,
+        ).to(device)
+        model = tcn_seq2seq.TCNSeq2Seq(enc, dec)
     ############
     # MARK
     # Code added for learned input compression
@@ -168,6 +198,7 @@ def prepare_model(
         )
     # End of code added for learned input compression
     ###########
+
     model = model.to(device)
     model.zero_grad()
     model.double()
@@ -180,7 +211,7 @@ def log_config(path, args):
             f.write(f"{key}:{value}\n")
 
 
-def prepare_optimizer(model, opt="sgd", lr=None):
+def prepare_optimizer(model, opt="sgd", lr=None):      #lr edit
     kwargs = {}
     if lr is not None:
         kwargs["lr"] = lr

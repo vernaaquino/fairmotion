@@ -19,7 +19,8 @@ from fairmotion.models import (
     cnn_seq2seq,
     tcn_decoders,
     tcn_encoders,
-    tcn_seq2seq     #cnn, tcn added for CNN Seq2Seq and TCN architecture (EJ edited)
+    tcn_seq2seq,  #cnn, tcn added for CNN Seq2Seq and TCN architecture (EJ edited)
+    transformer2, # Added for learned input compression
 )
 from fairmotion.tasks.motion_prediction import dataset as motion_dataset
 from fairmotion.utils import constants
@@ -49,6 +50,8 @@ def unflatten_angles(arr, rep):
         return arr.reshape(arr.shape[:-1] + (-1, 4))
     elif rep == "rotmat":
         return arr.reshape(arr.shape[:-1] + (-1, 3, 3))
+    elif rep == "compressed":
+        return arr.reshape(arr.shape[:-1] + (-1, 1))
 
 
 def flatten_angles(arr, rep):
@@ -63,6 +66,8 @@ def flatten_angles(arr, rep):
     elif rep == "rotmat":
         # original dimension is (batch_size, num_frames, num_joints, 3, 3)
         return arr.reshape(arr.shape[:-3] + (-1))
+    elif rep == "compressed":
+        return arr
 
 
 def multiprocess_convert(arr, convert_fn):
@@ -79,6 +84,13 @@ def convert_fn_to_R(rep):
         ops.append(partial(multiprocess_convert, convert_fn=conversions.Q2R))
     elif rep == "rotmat":
         ops.append(lambda x: x)
+    ############
+    # MARK
+    # code added for input compression
+    elif rep == "compressed":
+        ops.append(partial(multiprocess_convert, convert_fn=conversions.C2R))
+    # end input compression code
+    ############
     ops.append(np.array)
     return ops
 
@@ -94,6 +106,13 @@ def convert_fn_from_R(rep):
         convert_fn = conversions.R2Q
     elif rep == "rotmat":
         convert_fn = identity
+    ############
+    # MARK
+    # code added for input compression
+    elif rep == "compressed":
+        convert_fn = conversions.R2C
+    # end input compression code
+    ############
     return convert_fn
 
 
@@ -103,6 +122,7 @@ def unnormalize(arr, mean, std):
 
 def prepare_dataset(
     train_path, valid_path, test_path, batch_size, device, shuffle=False,
+    as_int=False # Added for input compression
 ):
     dataset = {}
     for split, split_path in zip(
@@ -114,6 +134,7 @@ def prepare_dataset(
             std = dataset["train"].dataset.std
         dataset[split] = motion_dataset.get_loader(
             split_path, batch_size, device, mean, std, shuffle,
+            as_int # Added for input compression
         )
     return dataset, mean, std
 
@@ -168,6 +189,16 @@ def prepare_model(
             device=device,
         ).to(device)
         model = tcn_seq2seq.TCNSeq2Seq(enc, dec)
+    ############
+    # MARK
+    # Code added for learned input compression
+    elif architecture == "transformer2":
+        model = transformer2.TransformerModel2(
+            input_dim, hidden_dim, 4, hidden_dim, num_layers,
+        )
+    # End of code added for learned input compression
+    ###########
+
     model = model.to(device)
     model.zero_grad()
     model.double()

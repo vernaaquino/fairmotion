@@ -40,6 +40,7 @@ def train(args):
     logging.info(f"Using device: {device}")
 
     logging.info("Preparing dataset...")
+    _, rep = os.path.split(args.preprocessed_path.strip("/")) # Added for input compression
     dataset, mean, std = utils.prepare_dataset(
         *[
             os.path.join(args.preprocessed_path, f"{split}.pkl")
@@ -48,6 +49,7 @@ def train(args):
         batch_size=args.batch_size,
         device=device,
         shuffle=args.shuffle,
+        as_int=(rep=="compressed") # Added for input compression
     )
     # Loss per epoch is the average loss per sequence
     num_training_sequences = len(dataset["train"]) * args.batch_size
@@ -253,7 +255,8 @@ if __name__ == "__main__":
             "transformer_encoder",
             "rnn",
             "cnn_seq2seq",  # Added for CNN Seq2Seq model (EJ edited)
-            "tcn_seq2seq"   # Added for tcn_model (EJ edited)
+            "tcn_seq2seq",   # Added for tcn_model (EJ edited)
+            "transformer2", # Added for learned input compression
         ],
     )
     parser.add_argument(

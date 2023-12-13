@@ -64,6 +64,7 @@ def train(args):
         device=device,
         num_layers=args.num_layers,
         architecture=args.architecture,
+        k=args.k
     )
 
     criterion = nn.MSELoss()
@@ -257,6 +258,8 @@ if __name__ == "__main__":
             "cnn_seq2seq",  # Added for CNN Seq2Seq model (EJ edited)
             "tcn_seq2seq",   # Added for tcn_model (EJ edited)
             "transformer2", # Added for learned input compression
+            "transformerv1", # Added for Transformer with temporal conv v1
+            "transformerv2" # Added for Transformer with temporal conv v2
         ],
     )
     parser.add_argument(
@@ -269,5 +272,12 @@ if __name__ == "__main__":
         default="sgd",
         choices=["adam", "sgd", "noamopt"],
     )
+    parser.add_argument(
+        "--k",
+        type=int,
+        help="kernel size for temporal conv transformer",
+        default=3,
+    )
+
     args = parser.parse_args()
     main(args)

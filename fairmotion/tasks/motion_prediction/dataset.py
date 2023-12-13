@@ -54,6 +54,7 @@ def get_loader(
     mean=None,
     std=None,
     shuffle=False,
+    as_int=False
 ):
     """Returns data loader for custom dataset.
     Args:
@@ -64,7 +65,7 @@ def get_loader(
         data_loader: data loader for custom dataset.
     """
     # build a custom dataset
-    dataset = Dataset(dataset_path, device, mean, std)
+    dataset = Dataset(dataset_path, device, mean, std, as_int)
 
     # data loader for custom dataset
     # this will return (src_seqs, tgt_seqs) for each iteration

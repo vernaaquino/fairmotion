@@ -140,7 +140,7 @@ def prepare_dataset(
 
 
 def prepare_model(
-    input_dim, hidden_dim, device, num_layers=1, architecture="seq2seq"
+    input_dim, hidden_dim, device, num_layers=1, architecture="seq2seq", k=3
 ):
     if architecture == "rnn":
         model = rnn.RNN(input_dim, hidden_dim, num_layers)
@@ -198,7 +198,14 @@ def prepare_model(
         )
     # End of code added for learned input compression
     ###########
-
+    elif architecture == "transformerv1":
+        model = transformer.TransformerModelV1(
+            input_dim, hidden_dim, 4, hidden_dim, num_layers, k=k
+        )
+    elif architecture == "transformerv2":
+        model = transformer.TransformerModelV2(
+            input_dim, hidden_dim, 4, hidden_dim, num_layers, k=k
+        )
     model = model.to(device)
     model.zero_grad()
     model.double()
